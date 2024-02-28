@@ -1,5 +1,4 @@
 import { get } from "https";
-import { Parse } from "unzipper";
 import { existsSync, mkdirSync, createWriteStream, createReadStream } from "fs";
 import { dirname as _dirname } from "path";
 import csv from "csv-parser";
