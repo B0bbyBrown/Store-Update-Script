@@ -83,7 +83,7 @@ async function processCSV(filePath) {
         results.push(row);
       })
       .on("end", () => {
-        resolve(results);
+        console.log("CSV file successfully processed.");
       })
       .on("error", (error) => {
         reject(error);
