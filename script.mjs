@@ -1,55 +1,36 @@
 import { get } from "https";
 import { Parse } from "unzipper";
 import { existsSync, mkdirSync, createWriteStream, createReadStream } from "fs";
-import { dirname } from "path";
+import { dirname as _dirname } from "path";
 import csv from "csv-parser";
 import { pipeline } from "stream";
 import { promisify } from "util";
 import { createGunzip } from "zlib";
-import { existsSync as _existsSync, mkdirSync as _mkdirSync } from "fs";
-import { join } from "path";
 
-//Generate File Path
-function generateFilePath() {
+// Function to generate file name based on current date and time
+function generateFileName() {
   const now = new Date();
   const year = now.getFullYear().toString().slice(-2);
   const month = ("0" + (now.getMonth() + 1)).slice(-2);
   const day = ("0" + now.getDate()).slice(-2);
   const hour = ("0" + now.getHours()).slice(-2);
   const minute = ("0" + now.getMinutes()).slice(-2);
-
-  // Construct folder path
-  const folderPath = join(__dirname, `${year}/${month}/${day}/${hour}`);
-
-  // Create folder recursively if it doesn't exist
-  if (!_existsSync(folderPath)) {
-    _mkdirSync(folderPath, { recursive: true });
-  }
-
-  // Construct file path without the file name
-  const filePath = join(folderPath, `${minute}.csv.gz`);
-
-  return filePath;
+  return `${year}/${month}/${day}/${hour}/${minute}.csv.gz`;
 }
 
-//Ensure Directory Existence
-async function ensureDirectoryExistence(filePath, maxAttempts = 3) {
-  const dirName = dirname(filePath);
-  try {
-    if (!existsSync(dirName)) {
-      mkdirSync(dirName, { recursive: true });
-      console.log(`Directory created: ${dirName}`);
-    }
+// Function to ensure directory exists
+function ensureDirectoryExistence(filePath) {
+  const dirname = _dirname(filePath);
+  if (existsSync(dirname)) {
     return true;
-  } catch (error) {
-    console.error(`Failed to create directory: ${dirName}`, error);
-    if (maxAttempts <= 0) throw error;
-    return ensureDirectoryExistence(filePath, maxAttempts - 1);
   }
+  ensureDirectoryExistence(dirname);
+  mkdirSync(dirname);
 }
 
-//Download File
-async function downloadFile(url, dest, maxAttempts = 3) {
+// Function to download file from URL
+async function downloadFile(url, dest) {
+  const pipelineAsync = promisify(pipeline);
   console.log(`Downloading file from: ${url}`);
   try {
     const response = await new Promise((resolve, reject) => {
@@ -69,39 +50,50 @@ async function downloadFile(url, dest, maxAttempts = 3) {
     });
 
     console.log(`Download started. Saving to: ${dest}`);
-    await promisify(pipeline)(response, createWriteStream(dest));
+    await pipelineAsync(response, createWriteStream(dest));
     console.log(`Download completed successfully. File saved to: ${dest}`);
   } catch (error) {
     console.error(`Failed to download file: ${error.message}`);
-    if (maxAttempts <= 0) throw error;
-    return downloadFile(url, dest, maxAttempts - 1);
+    throw new Error(`Failed to download file: ${error.message}`);
   }
 }
 
-//main
+// Main function
 async function main() {
   try {
     const url = "https://www.vermontsales.co.za/exports_v2/products.csv.gz";
-    const downloadPath = "./zipped-downloads";
+    const downloadPath = "./downloads";
 
-    const filePath = generateFilePath();
+    const fileName = generateFileName();
+    const filePath = `${downloadPath}/${fileName}`;
 
-    await ensureDirectoryExistence(filePath);
+    // Ensure directory exists
+    ensureDirectoryExistence(filePath);
 
+    // Download file
     await downloadFile(url, filePath);
     console.log(`File downloaded to: ${filePath}`);
 
+    // Unzip the file
     const gunzip = createGunzip();
     const readStream = createReadStream(filePath);
-    const parseStream = readStream.pipe(gunzip).pipe(Parse());
+    readStream.pipe(gunzip);
+
+    const parseStream = Parse();
+    gunzip.pipe(parseStream);
+
+    parseStream.on("error", (error) => {
+      console.error("Error unzipping file:", error);
+    });
 
     parseStream.on("entry", (entry) => {
       const fileName = entry.path;
-      const type = entry.type;
+      const type = entry.type; // 'Directory' or 'File'
 
       console.log(`Entry: ${fileName}, Type: ${type}`);
 
       if (type === "File" && fileName === "products.csv") {
+        // Process the CSV file
         entry
           .pipe(csv())
           .on("data", (row) => {
@@ -119,10 +111,6 @@ async function main() {
       }
     });
 
-    parseStream.on("error", (error) => {
-      console.error("Error during unzipping:", error);
-    });
-
     parseStream.on("finish", () => {
       console.log("File unzipped successfully.");
     });
@@ -131,4 +119,5 @@ async function main() {
   }
 }
 
+// Execute main function
 main();
