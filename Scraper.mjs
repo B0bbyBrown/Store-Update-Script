@@ -105,7 +105,7 @@ async function saveToCSV(filteredData, outputRootDirectory) {
 }
 
 // Main function
-async function main() {
+export async function main() {
   try {
     const unzippedDirectoryPath =
       "C:\\Bobby Brown\\Work-File\\Nova-Web-Solutions\\CCC\\New\\v1\\Store-Update-Script\\unzipped"; // Directory path containing unzipped CSV files

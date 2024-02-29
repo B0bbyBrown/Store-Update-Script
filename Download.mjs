@@ -71,27 +71,8 @@ async function unzipFile(inputFilePath, outputFilePath) {
   });
 }
 
-// Function to process CSV data
-async function processCSV(filePath) {
-  return new Promise((resolve, reject) => {
-    const results = [];
-
-    createReadStream(filePath)
-      .pipe(csv())
-      .on("data", (row) => {
-        results.push(row);
-      })
-      .on("end", () => {
-        console.log("CSV file successfully processed.");
-      })
-      .on("error", (error) => {
-        reject(error);
-      });
-  });
-}
-
 // Main function
-async function main() {
+export async function main() {
   try {
     const url = "https://www.vermontsales.co.za/exports_v2/products.csv.gz";
     const downloadPath = "./downloads";
@@ -115,14 +96,6 @@ async function main() {
     console.log(
       `File unzipped successfully. Unzipped file saved to: ${outputFilePath}`
     );
-
-    // Process the unzipped CSV file
-    console.log("Processing the unzipped CSV file...");
-    const csvData = await processCSV(outputFilePath);
-    console.log("CSV file processed successfully.");
-    console.log("CSV Data:", csvData);
-
-    // Further processing of the CSV data can be done here
   } catch (error) {
     console.error("Error:", error);
   }
