@@ -48,26 +48,30 @@ function readCSV(filePath) {
   });
 }
 
-// Function to filter data based on model numbers
-function filterData(csvData, modelNumbers) {
-  // Find the rows that contain any of the specified model numbers
-  const filteredRows = csvData.filter((row) =>
-    modelNumbers.includes(row.model)
-  );
+// Function to filter data based on "manufacturer" column (column K) and "TORK CRAFT" value
+function filterData(csvData) {
+  // Find the index of the "manufacturer" column (column K)
+  const manufacturerColumnIndex = 10; // Column K (zero-based index)
+
+  // Filter rows based on the value "TORK CRAFT" in the "manufacturer" column
+  const filteredRows = csvData.filter((row, index) => {
+    if (index === 0) return true; // Include the header row
+
+    return row[manufacturerColumnIndex] === "TORK CRAFT";
+  });
 
   // If no matching rows are found, return an empty array
   if (filteredRows.length === 0) {
-    console.log("No matching rows found.");
+    console.log(`No rows found with "TORK CRAFT" in column K.`);
     return [];
   }
 
   // Include the header row as the first element in the filteredData
-  const headerRow = Object.keys(filteredRows[0]);
-  const filteredData = [headerRow];
+  const filteredData = [csvData[0]];
 
-  // Extract the information from the rows containing model numbers
+  // Add rows with "TORK CRAFT" in column K to the filteredData
   filteredRows.forEach((row) => {
-    filteredData.push(Object.values(row));
+    filteredData.push(row);
   });
 
   return filteredData;
@@ -110,7 +114,7 @@ export async function main() {
     const unzippedDirectoryPath =
       "C:\\Bobby Brown\\Work-File\\Nova-Web-Solutions\\CCC\\New\\v1\\Store-Update-Script\\unzipped"; // Directory path containing unzipped CSV files
     const outputRootDirectory = "./filtered_data"; // Root directory for saving the filtered data
-    const modelNumbers = ["A23BP2"]; // Hardcoded model numbers
+    const modelNumbers = ["TORK CRAFT"]; // Hardcoded model numbers
 
     // Find the latest CSV file in the directory
     const latestCSVFile = await findLatestCSV(unzippedDirectoryPath);

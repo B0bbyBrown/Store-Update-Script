@@ -30,7 +30,6 @@ function ensureDirectoryExistence(filePath) {
 // Function to download file from URL
 async function downloadFile(url, dest) {
   const pipelineAsync = promisify(pipeline);
-  console.log(`Starting the download of file from: ${url}`);
   try {
     const response = await new Promise((resolve, reject) => {
       get(url, (response) => {
@@ -48,9 +47,9 @@ async function downloadFile(url, dest) {
       });
     });
 
-    console.log(`Download started. Saving to: ${dest}`);
+    // console.log(`Download started. Saving to: ${dest}`);
     await pipelineAsync(response, createWriteStream(dest));
-    console.log(`Download completed successfully. File saved to: ${dest}`);
+    // console.log(`Download completed successfully. File saved to: ${dest}`);
   } catch (error) {
     console.error(`Failed to download file: ${error.message}`);
     throw new Error(`Failed to download file: ${error.message}`);
@@ -74,28 +73,37 @@ async function unzipFile(inputFilePath, outputFilePath) {
 // Main function
 export async function main() {
   try {
-    const url = "https://www.vermontsales.co.za/exports_v2/products.csv.gz";
+    const url =
+      "https://www.vermontsales.co.za/exports_v2/manufacturers.csv.gz";
     const downloadPath = "./downloads";
     const unzipPath = "./unzipped";
 
+    // Generate file & path dynamically
+    // console.log("Generating file path...");
     const fileName = generateFolderPath();
+    // console.log(`File name generated: ${fileName}`);
     const filePath = `${downloadPath}/${fileName}`;
+    // console.log(`File path generated: ${filePath}`);
     const outputFilePath = `${unzipPath}/products.csv`;
+    // console.log(`Output file path generated: ${outputFilePath}`);
 
     // Ensure directory exists
+    // console.log("Ensuring directory exists...");
     ensureDirectoryExistence(filePath);
+    // console.log(`Directory exists: ${filePath}`);
     ensureDirectoryExistence(outputFilePath);
 
     // Download file
+    // console.log("Downloading file from url");
     await downloadFile(url, filePath);
-    console.log(`File downloaded to: ${filePath}`);
+    // console.log(`File downloaded to: ${filePath}`);
 
     // Unzip the file
-    console.log("Unzipping file...");
+    // console.log("Unzipping file...");
     await unzipFile(filePath, outputFilePath);
-    console.log(
-      `File unzipped successfully. Unzipped file saved to: ${outputFilePath}`
-    );
+    // console.log(
+    //   `File unzipped successfully. Unzipped file saved to: ${outputFilePath}`
+    // );
   } catch (error) {
     console.error("Error:", error);
   }
